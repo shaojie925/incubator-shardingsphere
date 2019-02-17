@@ -29,6 +29,7 @@ import io.shardingsphere.core.metadata.table.TableMetaData;
 import io.shardingsphere.core.rule.DataNode;
 import io.shardingsphere.core.rule.ShardingDataSourceNames;
 import io.shardingsphere.core.rule.ShardingRule;
+import io.shardingsphere.core.rule.TableRule;
 import lombok.RequiredArgsConstructor;
 
 import java.sql.Connection;
@@ -36,6 +37,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -60,7 +62,11 @@ public final class TableMetaDataLoader {
     private final int maxConnectionsSizePerQuery;
     
     private final boolean isCheckingMetaData;
-    
+
+    private final boolean isCachingMetaData;
+
+    private final Map<String, TableMetaData> cachedMetaData = new HashMap<>();
+
     /**
      * Load table meta data.
      *
@@ -70,12 +76,35 @@ public final class TableMetaDataLoader {
      * @throws SQLException SQL exception
      */
     public TableMetaData load(final String logicTableName, final ShardingRule shardingRule) throws SQLException {
-        List<TableMetaData> actualTableMetaDataList = load(getDataNodeGroups(logicTableName, shardingRule), shardingRule.getShardingDataSourceNames());
+        TableRule tableRule = findTableRule(logicTableName, shardingRule);
+        if (tableRule == null || !isCachingMetaData) {
+            return doLoad(logicTableName, shardingRule);
+        }
+        TableMetaData tableMetaData = cachedMetaData.get(tableRule.getLogicTable());
+        if (tableMetaData == null) {
+            tableMetaData = doLoad(logicTableName, shardingRule);
+            if (tableMetaData.getColumns() != null && tableMetaData.getColumns().size() > 0) {
+                cachedMetaData.put(tableRule.getLogicTable(), tableMetaData);
+            }
+        }
+        return tableMetaData;
+    }
+
+    /**
+     * Load table meta data.
+     *
+     * @param logicTableName logic table name
+     * @param shardingRule sharding rule
+     * @return table meta data
+     * @throws SQLException SQL exception
+     */
+    private TableMetaData doLoad(final String logicTableName, final ShardingRule shardingRule) throws SQLException {
+        List<TableMetaData> actualTableMetaDataList = doLoad(getDataNodeGroups(logicTableName, shardingRule), shardingRule.getShardingDataSourceNames());
         checkUniformed(logicTableName, actualTableMetaDataList);
         return actualTableMetaDataList.iterator().next();
     }
     
-    private List<TableMetaData> load(final Map<String, List<DataNode>> dataNodeGroups, final ShardingDataSourceNames shardingDataSourceNames) throws SQLException {
+    private List<TableMetaData> doLoad(final Map<String, List<DataNode>> dataNodeGroups, final ShardingDataSourceNames shardingDataSourceNames) throws SQLException {
         return executeEngine.groupExecute(getDataNodeGroups(dataNodeGroups), new ShardingGroupExecuteCallback<DataNode, TableMetaData>() {
             
             @Override
@@ -83,12 +112,12 @@ public final class TableMetaDataLoader {
                 String dataSourceName = dataNodes.iterator().next().getDataSourceName();
                 DataSourceMetaData dataSourceMetaData = shardingDataSourceMetaData.getActualDataSourceMetaData(dataSourceName);
                 String catalog = null == dataSourceMetaData ? null : dataSourceMetaData.getSchemeName();
-                return load(shardingDataSourceNames.getRawMasterDataSourceName(dataSourceName), catalog, dataNodes);
+                return doLoad(shardingDataSourceNames.getRawMasterDataSourceName(dataSourceName), catalog, dataNodes);
             }
         });
     }
     
-    private Collection<TableMetaData> load(final String dataSourceName, final String catalog, final Collection<DataNode> dataNodes) throws SQLException {
+    private Collection<TableMetaData> doLoad(final String dataSourceName, final String catalog, final Collection<DataNode> dataNodes) throws SQLException {
         Collection<TableMetaData> result = new LinkedList<>();
         try (Connection connection = connectionManager.getConnection(dataSourceName)) {
             for (DataNode each : dataNodes) {
@@ -164,4 +193,15 @@ public final class TableMetaDataLoader {
             }
         }
     }
+
+    private TableRule findTableRule(final String logicTableName, final ShardingRule shardingRule) {
+        for (TableRule rule : shardingRule.getTableRules()) {
+            if (rule.getActualTableIdentifierAlgorithm() != null && rule.getActualTableIdentifierAlgorithm()
+                    .isActualTable(logicTableName)) {
+                return  rule;
+            }
+        }
+        return null;
+    }
+
 }

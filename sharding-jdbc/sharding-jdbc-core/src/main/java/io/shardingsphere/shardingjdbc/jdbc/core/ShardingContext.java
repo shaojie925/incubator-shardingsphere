@@ -65,7 +65,8 @@ public final class ShardingContext implements AutoCloseable {
         executeEngine = new ShardingExecuteEngine(executorSize);
         metaData = new ShardingMetaData(getDataSourceURLs(dataSourceMap), shardingRule, databaseType, executeEngine, new JDBCTableMetaDataConnectionManager(dataSourceMap), 
                 shardingProperties.<Integer>getValue(ShardingPropertiesConstant.MAX_CONNECTIONS_SIZE_PER_QUERY), 
-                shardingProperties.<Boolean>getValue(ShardingPropertiesConstant.CHECK_TABLE_METADATA_ENABLED));
+                shardingProperties.<Boolean>getValue(ShardingPropertiesConstant.CHECK_TABLE_METADATA_ENABLED),
+                shardingProperties.<Boolean>getValue(ShardingPropertiesConstant.CACHE_TABLE_METADATA_ENABLED));
     }
     
     private DatabaseMetaData getDatabaseMetaData(final Map<String, DataSource> dataSourceMap) throws SQLException {

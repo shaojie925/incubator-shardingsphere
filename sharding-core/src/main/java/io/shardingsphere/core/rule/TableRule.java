@@ -18,6 +18,7 @@
 package io.shardingsphere.core.rule;
 
 import com.google.common.base.Preconditions;
+import io.shardingsphere.api.algorithm.identify.ActualTableIdentifierAlgorithm;
 import io.shardingsphere.api.config.rule.TableRuleConfiguration;
 import io.shardingsphere.core.exception.ShardingException;
 import io.shardingsphere.core.keygen.KeyGenerator;
@@ -62,6 +63,8 @@ public final class TableRule {
     private final KeyGenerator keyGenerator;
     
     private final String logicIndex;
+
+    private ActualTableIdentifierAlgorithm actualTableIdentifierAlgorithm;
     
     public TableRule(final String defaultDataSourceName, final String logicTableName) {
         logicTable = logicTableName.toLowerCase();
@@ -72,6 +75,7 @@ public final class TableRule {
         generateKeyColumn = null;
         keyGenerator = null;
         logicIndex = null;
+        actualTableIdentifierAlgorithm = null;
     }
     
     public TableRule(final Collection<String> dataSourceNames, final String logicTableName) {
@@ -83,6 +87,7 @@ public final class TableRule {
         generateKeyColumn = null;
         keyGenerator = null;
         logicIndex = null;
+        actualTableIdentifierAlgorithm = null;
     }
     
     public TableRule(final TableRuleConfiguration tableRuleConfig, final ShardingDataSourceNames shardingDataSourceNames) {
@@ -97,6 +102,7 @@ public final class TableRule {
         generateKeyColumn = tableRuleConfig.getKeyGeneratorColumnName();
         keyGenerator = tableRuleConfig.getKeyGenerator();
         logicIndex = null == tableRuleConfig.getLogicIndex() ? null : tableRuleConfig.getLogicIndex().toLowerCase();
+        actualTableIdentifierAlgorithm = tableRuleConfig.getActualTableIdentifierAlgorithm();
     }
     
     private boolean isEmptyDataNodes(final List<String> dataNodes) {

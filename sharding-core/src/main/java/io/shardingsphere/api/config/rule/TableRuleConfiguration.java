@@ -17,6 +17,7 @@
 
 package io.shardingsphere.api.config.rule;
 
+import io.shardingsphere.api.algorithm.identify.ActualTableIdentifierAlgorithm;
 import io.shardingsphere.api.config.strategy.ShardingStrategyConfiguration;
 import io.shardingsphere.core.keygen.KeyGenerator;
 import lombok.Getter;
@@ -44,4 +45,7 @@ public final class TableRuleConfiguration implements RuleConfiguration {
     private KeyGenerator keyGenerator;
     
     private String logicIndex;
+
+    private ActualTableIdentifierAlgorithm actualTableIdentifierAlgorithm;
+
 }
