@@ -10,6 +10,11 @@
     </parent>
     <artifactId>sharding-jdbc-core</artifactId>
     <name>${project.artifactId}</name>
+    <version>3.1.1-SNAPSHOT</version>
+
+    <properties>
+        <sharding-sphere.version>3.1.0</sharding-sphere.version>
+    </properties>
     
     <dependencies>
         <dependency>
@@ -20,12 +25,12 @@
         <dependency>
             <groupId>io.shardingsphere</groupId>
             <artifactId>sharding-transaction-core</artifactId>
-            <version>${project.version}</version>
+            <version>${sharding-sphere.version}</version>
         </dependency>
         <dependency>
             <groupId>io.shardingsphere</groupId>
             <artifactId>sharding-sql-test</artifactId>
-            <version>${project.version}</version>
+            <version>${sharding-sphere.version}</version>
             <scope>test</scope>
         </dependency>
         
